@@ -1,0 +1,126 @@
+<html>
+
+<head>
+    <script src="https://code.jquery.com/jquery-3.2.1.min.js"></script>
+</head>
+
+<body>
+    <div id="take_param">
+        <input type="text" id="height" placeholder="height">meter<br>
+        <input type="text" id="width" placeholder="width">meter<br>
+        <button id="btn_draw">draw</button>
+    </div>
+    <div id="room" style="display:none;">
+        <table id="area"></table>
+        <br>
+        <button id="btn_json">get_json</button>
+    </div>
+    <style>
+        td {
+            width: 9px;
+            height: 9px;
+            border-width: 1;
+            border-color: #000000;
+            border-style: solid;
+            padding: 0;
+            margin: 0;
+        }
+        
+        tr {
+            padding: 0;
+        }
+        
+        .black_bg {
+            background-color: black;
+        }
+        
+        .white_bg {
+            background-color: white;
+        }
+    </style>
+    <script>
+        main_height = 0;
+        main_width = 0;
+        $("#btn_draw").click(function() {
+            $("#take_param").hide();
+            height = parseInt($("#height").val());
+            width = parseInt($("#width").val());
+            new_height = 0;
+            new_width = 0;
+            if (height > width) {
+                new_width = height - width;
+            } else {
+                new_height = width - height;
+            }
+            alert(height + " " + width + " " + new_height + " " + new_width);
+            for (j = 1; j <= height; j++) {
+                tmp = "<tr>";
+                for (i = 1; i <= width; i++) {
+                    tmp += "<td id='" + j + "_" + i + "' class='white_bg' onclick=\"change_color('" + j + "_" + i + "',0);\"></td>";
+                }
+                if (new_width > 0) {
+                    for (i = i; i <= width + new_width; i++) {
+                        tmp += "<td id='" + j + "_" + i + "' class='black_bg' onclick=\"change_color('" + j + "_" + i + "',1);\"></td>";
+                    }
+                }
+                tmp += "</tr>";
+                $("#area").html($("#area").html() + tmp);
+            }
+            alert(j + " " + (height + new_height));
+            if (new_height > 0) {
+                for (j = j; j <= height + new_height; j++) {
+                    tmp = "<tr>";
+                    for (i = 1; i <= width; i++) {
+                        tmp += "<td id='" + j + "_" + i + "' class='black_bg' onclick=\"change_color('" + j + "_" + i + "',1);\"></td>";
+                    }
+                    tmp += "</tr>";
+                    $("#area").html($("#area").html() + tmp);
+                }
+            }
+            main_height = j - 1;
+            main_width = i - 1;
+            $("#room").show();
+        });
+
+        function change_color(id, al) {
+            if (al == 1) {
+                if (confirm("it should not change still. \n you want to change???")) {
+                    if ($("#" + id).hasClass("white_bg")) {
+                        $("#" + id).removeClass("white_bg");
+                        $("#" + id).addClass("black_bg");
+                    } else {
+                        $("#" + id).removeClass("black_bg");
+                        $("#" + id).addClass("white_bg");
+                    }
+                }
+            } else {
+                if ($("#" + id).hasClass("white_bg")) {
+                    $("#" + id).removeClass("white_bg");
+                    $("#" + id).addClass("black_bg");
+                } else {
+                    $("#" + id).removeClass("black_bg");
+                    $("#" + id).addClass("white_bg");
+                }
+            }
+        }
+
+        $("#btn_json").click(function() {
+            var arr = new Array(main_height);
+            alert(main_height + " " + main_width);
+            for (i = 1; i <= main_height; i++) {
+                var width_arr = new Array(main_width);
+                for (j = 1; j <= main_width; j++) {
+                    if ($("#" + i + "_" + j).hasClass("white_bg")) {
+                        width_arr[j - 1] = 0;
+                    } else if ($("#" + i + "_" + j).hasClass("black_bg")) {
+                        width_arr[j - 1] = 1;
+                    }
+                }
+                arr[i - 1] = width_arr;
+            }
+            alert(JSON.stringify(arr));
+        });
+    </script>
+</body>
+
+</html>
