@@ -1,6 +1,10 @@
 def init():
-    go = 1
+    global detect
+    detect =0
+    
+    
     global go
+    go = 1
     
     global pos
     pos = 0
