@@ -6,37 +6,102 @@ import time
 
 
 GPIO.setmode(GPIO.BCM)
-TRIG = 23
+TRIG = 23 #front sesnor pin
 ECHO = 24
+
+#left sensor
+trig_left = 20
+echo_left = 21
+
 print "Distance Measurement In Progress"
 GPIO.setup(TRIG,GPIO.OUT)
 GPIO.setup(ECHO,GPIO.IN)
+GPIO.setup(trig_left,GPIO.OUT)
+GPIO.setup(echo_left,GPIO.IN)
 GPIO.output(TRIG, False)
+GPIO.output(trig_left, False)
 print "Waiting For Sensor To Settle"
 time.sleep(2)
 
-row = 6
-col = 6
-loop_no=36   ##(it should be 20*20 = 400 idealy)
+row = 12
+col = 12
+loop_no= row * col   ##(it should be 20*20 = 400 idealy)
 
 
 path = np.arange(400).reshape(4,100)
-map1 = np.arange(loop_no).reshape(6,6)
-map1 = [1,1,1,1,1,1],[1,2,0,0,0,1],[1,0,0,0,0,1],[1,0,0,0,0,1],[1,0,0,0,'R',1],[1,1,1,1,1,1]
+map1 = np.arange(loop_no).reshape(row,col)
+map1 =[1,1,1,1,1,1,1,1,1,1,1,1],[1,2,0,0,0,1,1,0,0,1,0,1],[1,0,0,1,0,1,1,0,0,1,0,1],[1,0,0,1,1,1,1,0,0,1,0,1],[1,0,0,0,0,1,1,0,0,1,0,1],[1,1,1,1,0,0,0,0,1,1,1,1],[1,1,1,1,0,0,0,0,0,1,1,1],[1,0,0,0,0,1,1,0,0,1,0,1],[1,0,0,1,0,1,1,0,0,1,0,1],[1,0,0,1,1,1,1,0,0,1,0,1],[1,0,0,0,'R',1,1,0,0,1,0,1],[1,1,1,1,1,1,1,1,1,1,1,1]
+'''
+[1,1,1,1,1,1,1,1,1,1,1,1],
+[1,2,0,0,0,1,1,0,0,1,0,1],
+[1,0,0,1,0,1,1,0,0,1,0,1],
+[1,0,0,1,1,1,1,0,0,1,0,1],
+[1,0,0,0,0,1,1,0,0,1,0,1],
+[1,1,1,1,0,0,0,0,1,1,1,1],
+[1,1,1,1,0,0,0,0,0,1,1,1],
+[1,0,0,0,0,1,1,0,0,1,0,1],
+[1,0,0,1,0,1,1,0,0,1,0,1],
+[1,0,0,1,1,1,1,0,0,1,0,1],
+[1,0,0,0,'R',1,1,0,0,1,0,1],
+[1,1,1,1,0,0,1,0,1,1,1,1]
+
+'''
+
 cordinate = 0
 
  
 '''
-map11 = [1,1,1,1,1,1],
-       [1,0,2,0,0,1],
-       [1,0,0,0,0,1],
-       [1,0,0,0,0,1],
-       [1,0,0,0,'R',1],
-       [1,1,1,1,1,1]
+map11 = [1,1,1,1,1,1,1,1,1,1,1,1],
+       [1,2,0,0,0,1,1,1,1,1,1,1],
+       [1,0,0,1,0,1,1,1,1,1,1,1],
+       [1,0,0,1,1,1,1,1,1,1,1,1],
+       [1,0,0,0,'R',1,1,1,1,1,1,1],
+       [1,1,1,1,1,1,1,1,1,1,1,1]
+
+
+
+
+       [1,1,1,1,1,1,1,1,1,1,1,1],
+       [1,2,0,0,0,1,1,0,0,1,0,1],
+       [1,0,0,1,0,1,1,0,0,1,0,1],
+       [1,0,0,1,1,1,1,0,0,1,0,1],
+       [1,0,0,0,0,1,1,0,0,1,0,1],
+       [1,1,1,1,0,0,1,0,1,1,1,1]
+       [1,1,1,1,1,1,1,1,1,1,1,1],
+       [1,0,0,0,0,1,1,0,0,1,0,1],
+       [1,0,0,1,0,1,1,0,0,1,0,1],
+       [1,0,0,1,1,1,1,0,0,1,0,1],
+       [1,0,0,0,'R',1,1,0,0,1,0,1],
+       [1,1,1,1,0,0,1,0,1,1,1,1]
 '''
 
 
 
+changed_r_row4 = 0
+changed_r_col4 = 0
+
+changed_r_row1 = 0
+changed_r_col1 = 0
+
+changed_r_row2 = 0
+changed_r_col2 = 0
+
+changed_r_row3 = 0
+changed_r_col3 = 0
+
+
+
+changed_left_r_row1 = 0
+changed_left_r_col1 = 0
+
+changed_left_r_row2 = 0
+changed_left_r_col2 = 0
+
+changed_left_r_row3 = 0
+changed_left_r_col3 = 0
+
+changed_left_r_row4 = 0
+changed_left_r_col4 = 0
 
 setting.ind1=0
 setting.ind2=0
@@ -79,9 +144,10 @@ def flush():
 
 
 def path_find():
+    global row
+    global col
+    global loop_no
     flush();
-    
-    
     for k in range(0,4):
 	for l in range(0,100):
             path[k][l] = 0;
@@ -102,8 +168,7 @@ def path_find():
         ##printf("\n value of setting.temp = %d" ,setting.temp);
         for i in range(0,row):
             for j in range(0,col):
-		if(map1[i][j] == setting.temp):
-						##printf("\n value of k = %d" ,k);
+		if(map1[i][j] == setting.temp):				##printf("\n value of k = %d" ,k);
                     if((map1[i][j+1] != 1) & (map1[i][j+1] != 'R') & (map1[i][j+1] < 2)):
                         map1[i][j+1] = setting.temp + 1;
 		    if((map1[i][j-1] != 1) & (map1[i][j-1] != 'R') & (map1[i][j-1] < 2)):
@@ -113,6 +178,7 @@ def path_find():
                     if((map1[i-1][j] != 1) & (map1[i-1][j] != 'R') & (map1[i-1][j] < 2)):
 			map1[i-1][j] = setting.temp + 1;
 	setting.temp = setting.temp + 1;
+        
     
 #fsetting.ind out location of robot
     for I in range(0,row):
@@ -155,7 +221,6 @@ def path_find():
     path[3][setting.ind4] = r4;
     path[3][setting.ind4+1] = c4;   
     setting.sum4 = setting.temp4;
-    print "keyur",setting.temp4
 
 
     while(setting.flag == 1):
@@ -375,6 +440,23 @@ def path_find():
 	l = l+ 2;
 ############################################################################################
 def check_obs():
+    print "do you want obstacles ..............."
+    time.sleep(2)
+    global changed_r_row4
+    global changed_r_col4
+    
+    global changed_r_row1
+    global changed_r_col1
+
+    global changed_r_row2
+    global changed_r_col2
+
+    global changed_r_row3
+    global changed_r_col3
+
+
+    
+    
     GPIO.output(TRIG, True)
     time.sleep(0.00001)
     GPIO.output(TRIG, False)
@@ -386,40 +468,124 @@ def check_obs():
     distance_front = pulse_duration * 17150
     distance_front = round(distance_front, 2)
     print "Distance:",distance_front,"cm"
-    time.sleep(0.05)
+    #time.sleep(0.05)
 
     if(distance_front < 10):
         if (setting.pos == 0):
             map1[setting.r_row + 1][setting.r_col] = 1
-            setting.detect = 1
+            setting.detect_front1 = 1
+            changed_r_row1 = setting.r_row + 1
+            changed_r_col1 = setting.r_col
+ 
              
         elif (setting.pos == 90):
             map1[setting.r_row ][setting.r_col + 1] = 1
-            setting.detect = 1
+            setting.detect_front2 = 1
+            changed_r_row2 = setting.r_row
+            changed_r_col2 = setting.r_col + 1
+ 
              
         elif (setting.pos == 180):
             map1[setting.r_row - 1][setting.r_col] = 1
-            setting.detect = 1
+            setting.detect_front3 = 1
+            changed_r_row3 = setting.r_row - 1
+            changed_r_col3 = setting.r_col
+
+                
              
         elif (setting.pos == 270):
             map1[setting.r_row ][setting.r_col - 1] = 1
-            setting.detect = 1
-    elif(setting.detect == 1):
-        if (setting.pos == 0):
-            map1[setting.r_row + 1][setting.r_col] = 0
-            setting.detect = 0
-        elif (setting.pos == 90):
-            map1[setting.r_row ][setting.r_col + 1] = 0
-            setting.detect = 0
-             
-        elif (setting.pos == 180):
-            map1[setting.r_row - 1][setting.r_col] = 0
-            setting.detect = 0
-             
-        elif (setting.pos == 270):
-            map1[setting.r_row ][setting.r_col - 1] = 0
-            setting.detect = 0
-        
+            setting.detect_front4 = 1
+            changed_r_row4=setting.r_row
+            changed_r_col4=setting.r_col - 1
+
+ 
+            
+    else:
+        if(setting.detect_front1 == 1):
+            map1[changed_r_row1][changed_r_col1] = 0
+            setting.detect_front1 = 0
+        if(setting.detect_front2 == 1):
+            map1[changed_r_row2][changed_r_col2] = 0
+            setting.detect_front2 = 0
+        if(setting.detect_front3 == 1):
+            map1[changed_r_row3][changed_r_col3] = 0
+            setting.detect_front3 = 0
+        if(setting.detect_front4 == 1):
+            map1[changed_r_row4][changed_r_col4] = 0
+            setting.detect_front4 = 0
+    print "inside detect"
+
+    global changed_left_r_row1 
+    global changed_left_r_col1 
+
+    global changed_left_r_row2
+    global changed_left_r_col2
+    
+    global changed_left_r_row3 
+    global changed_left_r_col3 
+
+    global changed_left_r_row4 
+    global changed_left_r_col4 
+    
+    GPIO.output(trig_left, True)
+    time.sleep(0.00001)
+    GPIO.output(trig_left, False)
+    while GPIO.input(echo_left)==0:
+        pulse_start = time.time()
+    while GPIO.input(echo_left)==1:
+        pulse_end = time.time()   
+    pulse_duration = pulse_end - pulse_start
+    distance_left = pulse_duration * 17150
+    distance_left = round(distance_left, 2)
+    print "Distance_left:",distance_left,"cm"
+    #time.sleep(0.05)
+    
+    if(distance_left < 10):
+        if(setting.pos == 0):
+            map1[setting.r_row ][setting.r_col + 1] = 1;
+            setting.detect_left1 = 1
+            changed_left_r_row1 = setting.r_row
+            changed_left_r_col1 = setting.r_col + 1
+                
+        elif(setting.pos == 90):
+            map1[setting.r_row - 1][setting.r_col] = 1;
+            setting.detect_left2 = 1
+            changed_left_r_row2 = setting.r_row - 1
+            changed_left_r_col2 = setting.r_col
+            
+        elif(setting.pos == 180):
+            map1[setting.r_row ][setting.r_col - 1] = 1;
+            setting.detect_left3 = 1
+            changed_left_r_row3 = setting.r_row 
+            changed_left_r_col3 = setting.r_col-1
+            
+        elif(setting.pos == 270):
+              map1[setting.r_row +1][setting.r_col ] = 1;
+              setting.detect_left4 = 1
+              changed_left_r_row4 = setting.r_row + 1
+              changed_left_r_col4 = setting.r_col
+    else:
+        if(setting.detect_left1 == 1):
+            map1[changed_left_r_row1 ][changed_left_r_col1] = 0
+            setting.detect_left1 = 0
+
+        if(setting.detect_left2 == 1):
+            map1[changed_left_r_row2][changed_left_r_col2] = 1;
+            setting.detect_left2 = 0
+
+        if(setting.detect_left3 == 1):
+            map1[changed_left_r_row3][changed_left_r_col3] = 1;
+            setting.detect_left3 = 0
+
+        if(setting.detect_left4 == 1):
+            map1[changed_left_r_row4 ][changed_left_r_col4] = 1;
+            setting.detect_left4 = 0
+            
+            
+               
+    for i in range(0,row):
+        print map1[i]   
 ######################################################################       
             
             
@@ -429,6 +595,7 @@ def check_obs():
 		
 
 def main():
+    check_obs()
     path_find();
     while (setting.go):
         for i in range(0,row):
