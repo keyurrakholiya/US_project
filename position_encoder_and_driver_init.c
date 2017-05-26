@@ -6,6 +6,9 @@ unsigned int right_encoder=5; // INTERRUPT
 unsigned int left_pwm=6;
 unsigned int right_pwm=7;
 
+unsigned int left_direction=12;
+unsigned int right_direction=13;
+
 unsigned int left_break=8;
 unsigned int right_break=9;
 
