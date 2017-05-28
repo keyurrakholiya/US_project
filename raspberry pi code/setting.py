@@ -1,6 +1,29 @@
 def init():
-    go = 1
+    global detect_front1
+    detect_front1 =0
+
+    global detect_front2
+    detect_front2 =0
+
+    global detect_front3
+    detect_front3 =0
+
+    global detect_front4
+    detect_front4 =0
+    
+    global detect_left1
+    detect_left1 =0
+
+    global detect_left2
+    detect_left2 =0
+
+    global detect_left3
+    detect_left3 =0
+
+    global detect_left4
+    detect_left4 =0
     global go
+    go = 1
     
     global pos
     pos = 0
