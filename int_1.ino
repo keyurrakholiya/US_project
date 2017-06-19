@@ -14,8 +14,8 @@ int dir_right = 7;
 
 int brake_left = 8;
 int brake_right = 9;
-
-
+int y;
+int response = 0;
 void setup() {
 
   pinMode(interruptPin_left,INPUT);
@@ -66,6 +66,7 @@ void back()
   analogWrite(brake_right,0);
   analogWrite(dir_left,0);
   analogWrite(dir_right,0);
+  
 }
 
 void brake()
@@ -73,6 +74,7 @@ void brake()
   
   analogWrite(brake_left,255);
   analogWrite(brake_right,255);
+  
 }
 
 
@@ -107,6 +109,7 @@ void linear_distance_mm(unsigned int DistanceInMM ,int masterPower)
     delay(0.1);
     totalTicks += count_left;
   }
+Serial.print(response);   //this is sending response to pi when it goes forward and backward
 brake(); //Stop robot
 }
 
@@ -127,18 +130,21 @@ void angle_rotate(unsigned int Degrees)
     break;
     
   }
+  Serial.print(response);   //this will send 2 for left and 3 for right turn.
   brake(); //Stop robot
 }
 
 void forward_mm(unsigned int DistanceInMM, int power)
 {
   forward();
+  response = "1";   //we are sending 1 back to pi that forward is done
   linear_distance_mm(DistanceInMM, power);
 }
 
 void back_mm(unsigned int DistanceInMM)
 {
   back();
+  
 //  linear_distance_mm(DistanceInMM ,int power);
 }
 
@@ -146,6 +152,7 @@ void left_degrees(unsigned int Degrees)
 {
   // 88 pulses for 360 degrees rotation 4.090 degrees per count
   left(); //Turn left
+  response = "2"; 
   angle_rotate(Degrees);
 }
 
@@ -155,6 +162,7 @@ void right_degrees(unsigned int Degrees)
 {
   // 88 pulses for 360 degrees rotation 4.090 degrees per count
   right(); //Turn right
+  response = "3";
   angle_rotate(Degrees);
 }
 void left_ISR()
@@ -170,22 +178,46 @@ void right_ISR()
 
 
 //loooooooooooooooooooooooooooooooooooooooooooooooooooooop
-void loop() {
- // Serial.print(count_left);
-  //Serial.print(" ");
-  //Serial.println(count_right);
+void loop()
+{
+  if(Serial.available())  // data is coming from pi , "pathfind.py" send data to "com.py" and "com.py" send data to arduino
+                         // data 1 for forward, 2 for left , 3 for right ,4 for brake , 5 for back
+                         // when motion will be completed arduino will send response back to pi and waiting for next command.
+                          // arduino will send 1 when forward motion will be done, (see the last line of linear_distance_mm(unsigned int DistanceInMM ,int masterPower))
+                          // response value is changed from respective functions like left,right
+  {
+    y = Serial.read() - '0';
     
-  analogWrite(left_pwm,spd_left);
-  analogWrite(right_pwm,spd_right);
-
-
-  left_degrees(90);
-  brake();
-  delay(3000);
-  right_degrees(90);
-  brake();
-  delay(3000);
- 
+    decision(y);    //according to command from  pi motion will take place.
+  }
   
- 
+  delay(500);
+  analogWrite(left_pwm,spd);
+  analogWrite(right_pwm,spd);
+}
+
+void decision(int n)
+{
+  if(n == 1)
+  {
+    forward_mm(40);
+  }
+  if(n == 2)
+  {
+    left_degrees(90);
+  }
+  if(n == 3)
+  {
+    right_degrees(90);
+  }
+  if(n == 4)
+  {
+    brake();
+  }
+  
+  if( n == 5)
+  {
+    start();  //robot will move forward always
+  }
+  
 }
