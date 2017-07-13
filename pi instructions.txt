@@ -1,0 +1,45 @@
+we can use gpio directly using ssh script in command prompt.
+
+/usr/bin/autohotspot
+add new wifi network to this file first
+
+/etc/wpa_supplicant/wpa_supplicant.conf
+add wifi ssid and password here
+
+
+
+when device will turn on gpio16 will be high
+we can release it later
+http://www.raspberry-projects.com/pi/command-line/io-pins-command-line/io-pin-control-from-the-command-line
+
+
+
+audio is devided in two part, one for hdmi and another for earphone
+http://raspberrypi.stackexchange.com/questions/7088/playing-audio-files-with-python
+
+finger print sensor will be reseted if you connect it to 3.3 v
+
+for turning on hotspot on boot time follow this..
+https://frillip.com/using-your-raspberry-pi-3-as-a-wifi-access-point-with-hostapd/
+
+vnc server is runnig.. i have stared it on boot time
+user: ip_address:1
+password: 123456789
+
+raspberry pi 3 has two UART (ttyama0) its for bluetooth
+and mini UART(ttysys0) is for communication
+but we can disble the bluetooth and ttyama0 can be used for communication with other microcontroller.
+
+two types of pin out on pi
+board pin- physical pin number
+bcm pin - gpio number (see the pin diagram)
+
+
+
+this image will automatically connect to wifi
+ssid = sanket
+pass = 1234567890
+
+ssid = DIGISOL
+pass = navjivan
+
