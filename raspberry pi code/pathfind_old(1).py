@@ -1,10 +1,15 @@
-
+import tornado.web
+import tornado.websocket
+import os
+import json
 import numpy as np
 import setting
 import RPi.GPIO as GPIO
 import time
 import serial
 import com
+
+GPIO.setwarnings(False)
 
 ser = serial.Serial('/dev/ttyACM0',9600)
 time.sleep(5)
@@ -14,28 +19,46 @@ trig_front = 23 #front sesnor pin
 echo_front = 24
 
 #left sensor
-trig_left = 20
+trig_left = 19
 echo_left = 21
 
-print "Distance Measurement In Progress"
+print "Distance Measurement pins setup"
 GPIO.setup(trig_front,GPIO.OUT)
 GPIO.setup(echo_front,GPIO.IN)
 GPIO.setup(trig_left,GPIO.OUT)
 GPIO.setup(echo_left,GPIO.IN)
 GPIO.output(trig_front, False)
 GPIO.output(trig_left, False)
-print "Waiting For Sensor To Settle"
+print "pins set"
 time.sleep(2)
 
-row = 12
-col = 12
+row = 7
+col = 7
 loop_no= row * col   ##(it should be 20*20 = 400 idealy)
 
 
 path = np.arange(400).reshape(4,100)
 map1 = np.arange(loop_no).reshape(row,col)
-map1 =[1,1,1,1,1,1,1,1,1,1,1,1],[1,2,0,0,0,0,0,0,0,1,0,1],[1,0,0,1,0,1,1,0,0,1,0,1],[1,0,0,1,1,1,1,0,0,1,0,1],[1,0,1,0,0,1,1,0,0,1,0,1],[1,1,1,1,0,0,0,0,1,1,1,1],[1,1,1,1,0,0,0,0,0,1,1,1],[1,0,0,0,0,1,1,0,0,1,0,1],[1,0,0,1,0,1,1,0,0,1,0,1],[1,0,0,1,1,1,1,0,0,1,0,1],[1,0,0,0,'R',1,1,0,0,1,0,1],[1,1,1,1,1,1,1,1,1,1,1,1]
+#map1 =[1,1,1,1,1,1,1,1,1,1,1,1],[1,2,0,0,0,0,0,0,0,1,0,1],[1,0,0,1,0,1,1,0,0,1,0,1],[1,0,0,1,1,1,1,0,0,1,0,1],[1,0,1,0,0,1,1,0,0,1,0,1],[1,1,1,1,0,0,0,0,1,1,1,1],[1,1,1,1,0,0,0,0,0,1,1,1],[1,0,0,0,0,1,1,0,0,1,0,1],[1,0,0,1,0,1,1,0,0,1,0,1],[1,0,0,1,1,1,1,0,0,1,0,1],[1,0,0,0,'R',1,1,0,0,1,0,1],[1,1,1,1,1,1,1,1,1,1,1,1]
+
+
+map1=[1,1,1,1,1,1,1,1],[1,0,0,0,0,0,'R',1],[1,0,0,0,0,0,0,1],[1,0,0,0,0,0,0,1],[1,0,0,0,0,0,0,1],[1,0,0,0,0,0,0,1],[1,2,0,0,0,0,0,1],[1,1,1,1,1,1,1,1]
+
+print map1;
+
+
 '''
+[1,1,1,1,1,1,1,1],
+[1,0,0,0,0,0,'R',1],
+[1,0,0,0,0,0,0,1],
+[1,0,0,0,0,0,0,1],
+[1,0,0,0,0,0,0,1],
+[1,0,0,0,0,0,0,1],
+[1,2,0,0,0,0,0,1],
+[1,1,1,1,1,1,1,1]
+
+
+
 [1,1,1,1,1,1,1,1,1,1,1,1],
 [1,2,0,0,0,0,0,0,0,1,0,1],
 [1,0,0,1,0,1,1,0,0,1,0,1],
@@ -153,35 +176,36 @@ def path_find():
     global loop_no
     flush();
     for k in range(0,4):
-	for l in range(0,100):
+        for l in range(0,100):
             path[k][l] = 0;
-	    setting.ind1 = 0;
-	    setting.ind2 = 0;
-	    setting.ind3 = 0;
-	    setting.ind4 = 0;
+            setting.ind1 = 0;
+            setting.ind2 = 0;
+            setting.ind3 = 0;
+            setting.ind4 = 0;
 
     for i in range(0,row):
         for j in range(0,col):
             if(map1[i][j] == 2): ##fsetting.ind goal 'G'
-		map1[i][j] = 2;
-		setting.row_desti = i;
-		setting.col_desti = j;
+                map1[i][j] = 2;
+                setting.row_desti = i;
+                setting.col_desti = j;
     print "destination location",setting.row_desti,setting.col_desti
-	
+        
     while(setting.temp < loop_no):
         ##printf("\n value of setting.temp = %d" ,setting.temp);
         for i in range(0,row):
             for j in range(0,col):
-		if(map1[i][j] == setting.temp):				##printf("\n value of k = %d" ,k);
+                #print i,j,'A'
+                if(map1[i][j] == setting.temp):				##printf("\n value of k = %d" ,k);
                     if((map1[i][j+1] != 1) & (map1[i][j+1] != 'R') & (map1[i][j+1] < 2)):
                         map1[i][j+1] = setting.temp + 1;
-		    if((map1[i][j-1] != 1) & (map1[i][j-1] != 'R') & (map1[i][j-1] < 2)):
-			map1[i][j-1] = setting.temp + 1;
+                    if((map1[i][j-1] != 1) & (map1[i][j-1] != 'R') & (map1[i][j-1] < 2)):
+                        map1[i][j-1] = setting.temp + 1;
                     if((map1[i+1][j] != 1) & (map1[i+1][j] != 'R') & (map1[i+1][j] < 2)):
                         map1[i+1][j] = setting.temp + 1;
                     if((map1[i-1][j] != 1) & (map1[i-1][j] != 'R') & (map1[i-1][j] < 2)):
-			map1[i-1][j] = setting.temp + 1;
-	setting.temp = setting.temp + 1;
+                        map1[i-1][j] = setting.temp + 1;
+        setting.temp = setting.temp + 1;
         
     
 #fsetting.ind out location of robot
@@ -228,9 +252,9 @@ def path_find():
 
 
     while(setting.flag == 1):
-		
-	if(setting.temp1 > 2):
-	    
+                
+        if(setting.temp1 > 2):
+            
             if(map1[r1][c1-1] == map1[r1][c1] - 1):
                 setting.sum1 = setting.sum1 + map1[r1][c1-1];
                 setting.temp1 = map1[r1][c1-1];
@@ -242,7 +266,7 @@ def path_find():
                 if(map1[r1][c1-1] == 2):
                     setting.flag = 0;
                 c1 = c1 - 1;
-					
+                                        
             elif(map1[r1][c1+1] == map1[r1][c1] - 1):
             
                 setting.sum1 = setting.sum1 + map1[r1][c1+1];
@@ -280,9 +304,10 @@ def path_find():
                     setting.flag = 0;
                 r1 = r1 -1;
                 
-			
+                        
 
         if(setting.temp2 > 2 ):
+            print r2,c2,"B"
             if(map1[r2][c2+1] == map1[r2][c2] - 1):
                 setting.sum2 = setting.sum2 + map1[r2][c2+1];
                 setting.temp2 = map1[r2][c2+1];
@@ -317,7 +342,7 @@ def path_find():
                 path[1][setting.ind2]= r2 +1;
                 path[1][setting.ind2+1] = c2;
 
-                if(map1[r2+1][c2] == 2):
+                if(map1[r2+1][c2] ==2 ):
                     setting.flag = 0;     
                 r2 = r2 + 1;
                     
@@ -335,8 +360,8 @@ def path_find():
                 
             
         
-	
-	if(setting.temp3 > 2 ):	##row increment
+        
+        if(setting.temp3 > 2 ):	##row increment
         
             if(map1[r3][c3+1] == map1[r3][c3] - 1):
                 setting.sum3 = setting.sum3 + map1[r3][c3+1];
@@ -385,7 +410,7 @@ def path_find():
                     setting.flag = 0;
                 c3 = c3 -1;
                 
-                		
+                                
         if(setting.temp4 > 2 ):  ##row decrem
             if(map1[r4][c4+1] == map1[r4][c4] - 1): 
                 setting.sum4 = setting.sum4 + map1[r4][c4+1];
@@ -435,29 +460,31 @@ def path_find():
                     setting.flag = 0;
                 c4 = c4 - 1;
 
-				
+                                
     for k in range(0,4):
         for l in range(0,99):
-	    if((path[k][l] == setting.row_desti) & (path[k][l+1] == setting.col_desti)):
+            if((path[k][l] == setting.row_desti) & (path[k][l+1] == setting.col_desti)):
                 print("final path number is %d ",k);
-		setting.path_num = k;
-	l = l+ 2;
+                setting.path_num = k;
+        l = l+ 2;
 ############################################################################################
 
 
 def distance(trigger,echo):
-        
+    print "here1"
     GPIO.output(trigger, True)
     time.sleep(0.00001)
     GPIO.output(trigger, False)
     while GPIO.input(echo)==0:
+        print "here 2"
         pulse_start = time.time()
+        print "here 3"
     while GPIO.input(echo)==1:
         pulse_end = time.time()   
     pulse_duration = pulse_end - pulse_start
     dist = pulse_duration * 17150
     dist = round(dist, 2)
-    
+    print "here 4"
     return dist
     
 def check_obs():
@@ -595,11 +622,13 @@ def check_obs():
             
             
     
-	    
-		
+            
+                
 
 def main():
-    check_obs()
+   # check_obs()
+    #dist=distance(19,21);
+    #print "dist"
     path_find();
     while (setting.go):
         for i in range(0,row):
@@ -786,240 +815,268 @@ def main():
                 map1[setting.r_row ][setting.r_col - 1] = 'R';
                 map1[setting.r_row][setting.r_col]  = 0
                 setting.pos = 270;
-		path_find();
+                path_find();
 
-			
-				
-	if((path[setting.path_num][cordinate+2]== setting.row_desti) & (path[setting.path_num][cordinate+3] == setting.col_desti)): 
-		if(((setting.r_col + 1) == path[setting.path_num][cordinate+1] )&( setting.pos == 0)):
-			print("\t left forward");
-			com.brake()
+                        
+                                
+        if((path[setting.path_num][cordinate+2]== setting.row_desti) & (path[setting.path_num][cordinate+3] == setting.col_desti)): 
+                if(((setting.r_col + 1) == path[setting.path_num][cordinate+1] )&( setting.pos == 0)):
+                        print("\t left forward");
+                        com.brake()
                         com.left()
                         com.forward()
                         
-			map1[setting.r_row][setting.r_col+1] = 'R'
-			map1[setting.r_row][setting.r_col]  = 0
-			setting.pos = 90
-			setting.go = 0;
-			
-		elif(((setting.r_col + 1) == path[setting.path_num][cordinate+1] )&( setting.pos == 180)):
-			print("\tright  forward");
-			com.brake()
+                        map1[setting.r_row][setting.r_col+1] = 'R'
+                        map1[setting.r_row][setting.r_col]  = 0
+                        setting.pos = 90
+                        setting.go = 0;
+                        
+                elif(((setting.r_col + 1) == path[setting.path_num][cordinate+1] )&( setting.pos == 180)):
+                        print("\tright  forward");
+                        com.brake()
                         com.right()
                         com.forward()
                         
-			map1[setting.r_row][setting.r_col+1] = 'R'
-			map1[setting.r_row][setting.r_col]  = 0
-			setting.pos =90
-			setting.go = 0;
-			
-		elif(((setting.r_col + 1) == path[setting.path_num][cordinate+1] )&( setting.pos == 90)):
-			print("1time forward");
-			com.forward()
-			map1[setting.r_row][setting.r_col+1] = 'R'
-			map1[setting.r_row][setting.r_col]  = 0
-			setting.pos = 90
-			
-			
-			
-				
-			
-			##col decre
-		elif(((setting.r_col - 1) == path[setting.path_num][cordinate+1] )&( setting.pos == 0)):
-			print("\tright  forward");
-			com.brake()
+                        map1[setting.r_row][setting.r_col+1] = 'R'
+                        map1[setting.r_row][setting.r_col]  = 0
+                        setting.pos =90
+                        setting.go = 0;
+                        
+                elif(((setting.r_col + 1) == path[setting.path_num][cordinate+1] )&( setting.pos == 90)):
+                        print("1time forward");
+                        com.forward()
+                        map1[setting.r_row][setting.r_col+1] = 'R'
+                        map1[setting.r_row][setting.r_col]  = 0
+                        setting.pos = 90
+                        
+                        
+                        
+                                
+                        
+                        ##col decre
+                elif(((setting.r_col - 1) == path[setting.path_num][cordinate+1] )&( setting.pos == 0)):
+                        print("\tright  forward");
+                        com.brake()
                         com.right()
                         com.forward()
                         
-			map1[setting.r_row][setting.r_col - 1] = 'R'
-			map1[setting.r_row][setting.r_col]  = 0
-			setting.pos = 270
-			setting.go = 0; 
-			
-		elif(((setting.r_col - 1) == path[setting.path_num][cordinate+1] )&( setting.pos == 180)):
-			print("\tleft  forward");
-			com.brake()
+                        map1[setting.r_row][setting.r_col - 1] = 'R'
+                        map1[setting.r_row][setting.r_col]  = 0
+                        setting.pos = 270
+                        setting.go = 0; 
+                        
+                elif(((setting.r_col - 1) == path[setting.path_num][cordinate+1] )&( setting.pos == 180)):
+                        print("\tleft  forward");
+                        com.brake()
                         com.left()
                         com.forward()
                 
-			map1[setting.r_row][setting.r_col - 1] = 'R'
-			map1[setting.r_row][setting.r_col]  = 0
-			setting.pos = 270
-			setting.go = 0; 
-					
-		elif(((setting.r_col - 1) == path[setting.path_num][cordinate+1] )&( setting.pos == 270)):
-			print("1time forward");
-			com.forward()
-			map1[setting.r_row][setting.r_col - 1] = 'R'
-			map1[setting.r_row][setting.r_col]  = 0
-			setting.pos = 270
-			
-				
-			##row incre
-		elif(((setting.r_row + 1) == path[setting.path_num][cordinate] )&( setting.pos == 270)):
-			print("\tleft  forward");
-			com.brake()
+                        map1[setting.r_row][setting.r_col - 1] = 'R'
+                        map1[setting.r_row][setting.r_col]  = 0
+                        setting.pos = 270
+                        setting.go = 0; 
+                                        
+                elif(((setting.r_col - 1) == path[setting.path_num][cordinate+1] )&( setting.pos == 270)):
+                        print("1time forward");
+                        com.forward()
+                        map1[setting.r_row][setting.r_col - 1] = 'R'
+                        map1[setting.r_row][setting.r_col]  = 0
+                        setting.pos = 270
+                        
+                                
+                        ##row incre
+                elif(((setting.r_row + 1) == path[setting.path_num][cordinate] )&( setting.pos == 270)):
+                        print("\tleft  forward");
+                        com.brake()
                         com.left()
                         com.forward()
                         
-			map1[setting.r_row + 1][setting.r_col] = 'R'
-			map1[setting.r_row][setting.r_col]  = 0
-			setting.pos = 0
-			setting.go = 0; 
-				
-		elif(((setting.r_row + 1) == path[setting.path_num][cordinate] )&( setting.pos == 90)):
-			print("\tright  forward");
-			com.brake()
+                        map1[setting.r_row + 1][setting.r_col] = 'R'
+                        map1[setting.r_row][setting.r_col]  = 0
+                        setting.pos = 0
+                        setting.go = 0; 
+                                
+                elif(((setting.r_row + 1) == path[setting.path_num][cordinate] )&( setting.pos == 90)):
+                        print("\tright  forward");
+                        com.brake()
                         com.right()
                         com.forward()
                         
-			map1[setting.r_row + 1][setting.r_col] = 'R'
-			map1[setting.r_row][setting.r_col]  = 0
-			setting.go = 0;
-			setting.pos = 0
-				
-		elif(((setting.r_row + 1) == path[setting.path_num][cordinate] )&( setting.pos == 0)):
-			print(" forward");
-			com.forward()
-			map1[setting.r_row + 1][setting.r_col] = 'R'
-			map1[setting.r_row][setting.r_col]  = 0
-			setting.pos = 0
+                        map1[setting.r_row + 1][setting.r_col] = 'R'
+                        map1[setting.r_row][setting.r_col]  = 0
+                        setting.go = 0;
+                        setting.pos = 0
+                                
+                elif(((setting.r_row + 1) == path[setting.path_num][cordinate] )&( setting.pos == 0)):
+                        print(" forward");
+                        com.forward()
+                        map1[setting.r_row + 1][setting.r_col] = 'R'
+                        map1[setting.r_row][setting.r_col]  = 0
+                        setting.pos = 0
                        
-			
-			##row decre
-		elif(((setting.r_row - 1) == path[setting.path_num][cordinate] )&( setting.pos == 90)):
-			print("\tleft forward");
-			com.brake()
+                        
+                        ##row decre
+                elif(((setting.r_row - 1) == path[setting.path_num][cordinate] )&( setting.pos == 90)):
+                        print("\tleft forward");
+                        com.brake()
                         com.left()
                         com.forward()
                         
-			map1[setting.r_row - 1][setting.r_col] = 'R'
-			map1[setting.r_row][setting.r_col]  = 0
-			setting.pos = 180
-			setting.go = 0; 
-			
-		elif(((setting.r_row - 1) == path[setting.path_num][cordinate] )&( setting.pos ==270)):
-			print("\tright  forward");
-			com.brake()
+                        map1[setting.r_row - 1][setting.r_col] = 'R'
+                        map1[setting.r_row][setting.r_col]  = 0
+                        setting.pos = 180
+                        setting.go = 0; 
+                        
+                elif(((setting.r_row - 1) == path[setting.path_num][cordinate] )&( setting.pos ==270)):
+                        print("\tright  forward");
+                        com.brake()
                         com.right()
                         com.forward()
                         
-			setting.go = 0;
-			map1[setting.r_row - 1][setting.r_col] = 'R'
-			map1[setting.r_row][setting.r_col]  = 0
-			setting.pos =180
-				
-		elif(((setting.r_row - 1) == path[setting.path_num][cordinate] )&( setting.pos == 180)):
-			print("\t1 forward");
-			com.forward()
-			map1[setting.r_row - 1][setting.r_col] = 'R'
-			map1[setting.r_row][setting.r_col]  = 0
-			setting.pos = 180
-		setting.go = 0
-		print "done"
-		break;
+                        setting.go = 0;
+                        map1[setting.r_row - 1][setting.r_col] = 'R'
+                        map1[setting.r_row][setting.r_col]  = 0
+                        setting.pos =180
+                                
+                elif(((setting.r_row - 1) == path[setting.path_num][cordinate] )&( setting.pos == 180)):
+                        print("\t1 forward");
+                        com.forward()
+                        map1[setting.r_row - 1][setting.r_col] = 'R'
+                        map1[setting.r_row][setting.r_col]  = 0
+                        setting.pos = 180
+                setting.go = 0
+                print "done"
+                break;
 
             
-        check_obs()
+       # check_obs()
         path_find()
 
 setting.init()
-main()
-          
-for I in range(0,row):
-    for J in range(0,col):
-        if(map1[I][J] == 'R'): 
-            i = I
-            setting.r_row = I
-            j = J
-            setting.r_col = J
 
-for i in range(0,row):
-    print map1[i]
+
+def important_fun():
+     
+    for I in range(0,row):
+        for J in range(0,col):
+            if(map1[I][J] == 'R'): 
+                i = I
+                setting.r_row = I
+                j = J
+                setting.r_col = J
+
+    for i in range(0,row):
+        print map1[i]
+                
+    print "robot location", i,j
+    print setting.pos
+    if(setting.pos == 0):
+        if((setting.r_row + 1 == setting.row_desti) & (setting.r_col == setting.col_desti)):
+           print "forward stop"
+           com.forward()
+           com.brake()
+
+        elif((setting.r_row == setting.row_desti) & (setting.r_col + 1 == setting.col_desti)):
+           print "left forward stop"
+           com.brake()
+           com.left()
+           com.forward()
+           com.brake()
+
+        elif((setting.r_row == setting.row_desti) & (setting.r_col -1 == setting.col_desti)):
+           print "rihgt forward stop"
+           com.brake()
+           com.right()
+           com.forward()
+           com.brake()
+           
+    if(setting.pos == 90):
+        if((setting.r_row + 1 == setting.row_desti) & (setting.r_col == setting.col_desti)):
+            print "right forward stop"
+            com.brake()
+            com.right()
+            com.forward()
+            com.brake()
+           
+        elif((setting.r_row == setting.row_desti) & (setting.r_col + 1 == setting.col_desti)):
+            print "forward stop"
+            com.forward()
+            com.brake()
             
-print "robot location", i,j
-print setting.pos
-if(setting.pos == 0):
-    if((setting.r_row + 1 == setting.row_desti) & (setting.r_col == setting.col_desti)):
-       print "forward stop"
-       com.forward()
-       com.brake()
+        elif((setting.r_row - 1 == setting.row_desti) & (setting.r_col == setting.col_desti)):
+             print "left forwawrd stop"
+             com.brake()
+             com.left()
+             com.forward()
+             com.brake()
+           
+    if(setting.pos == 180):
+        if((setting.r_row - 1 == setting.row_desti) & (setting.r_col == setting.col_desti)):
+           print "forward stop"
+           com.forward()
+           com.brake()
+            
 
-    elif((setting.r_row == setting.row_desti) & (setting.r_col + 1 == setting.col_desti)):
-       print "left forward stop"
-       com.brake()
-       com.left()
-       com.forward()
-       com.brake()
+        elif((setting.r_row == setting.row_desti) & (setting.r_col + 1 == setting.col_desti)):
+           print "right forward stop"
+           com.brake()
+           com.right()
+           com.forward()
+           com.brake()
 
-    elif((setting.r_row == setting.row_desti) & (setting.r_col -1 == setting.col_desti)):
-       print "rihgt forward stop"
-       com.brake()
-       com.right()
-       com.forward()
-       com.brake()
-       
-if(setting.pos == 90):
-    if((setting.r_row + 1 == setting.row_desti) & (setting.r_col == setting.col_desti)):
-        print "right forward stop"
-        com.brake()
-        com.right()
-        com.forward()
-        com.brake()
-       
-    elif((setting.r_row == setting.row_desti) & (setting.r_col + 1 == setting.col_desti)):
-        print "forward stop"
-        com.forward()
-        com.brake()
-        
-    elif((setting.r_row - 1 == setting.row_desti) & (setting.r_col == setting.col_desti)):
-         print "left forwawrd stop"
-         com.brake()
-         com.left()
-         com.forward()
-         com.brake()
-       
-if(setting.pos == 180):
-    if((setting.r_row - 1 == setting.row_desti) & (setting.r_col == setting.col_desti)):
-       print "forward stop"
-       com.forward()
-       com.brake()
-        
+        elif((setting.r_row == setting.row_desti) & (setting.r_col -1 == setting.col_desti)):
+           print "left forward stop"
+           com.brake()
+           com.left()
+           com.forward()
+           com.brake()
+           
+    if(setting.pos == 270):
+        if((setting.r_row + 1 == setting.row_desti) & (setting.r_col == setting.col_desti)):
+            print "left forward stop"
+            com.brake()
+            com.left()
+            com.forward()
+            com.brake()
+           
+        elif((setting.r_row == setting.row_desti) & (setting.r_col - 1 == setting.col_desti)):
+            print "forward stop"
+            com.forward()
+            com.brake()
+            
+           
+        elif((setting.r_row - 1 == setting.row_desti) & (setting.r_col == setting.col_desti)):
+             print "right forwawrd stop"
+             com.brake()
+             com.right()
+             com.forward()
+             com.brake()
+           
 
-    elif((setting.r_row == setting.row_desti) & (setting.r_col + 1 == setting.col_desti)):
-       print "right forward stop"
-       com.brake()
-       com.right()
-       com.forward()
-       com.brake()
+class WebSocket(tornado.websocket.WebSocketHandler):
+    
+	def open(self):
+##		main();
+		print "connected maru"
+	def on_message(self, message):
+#		print(message);
+                global map1
+		data = json.loads(message)[u'map_data']
+		print map1
+		map1 = tuple(data);
+		#print map1[2][8],"AAA"
+		print "@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@"
+		print map1
+                main()
+                important_fun()
+	def check_origin(self,origin):
+		return True;
 
-    elif((setting.r_row == setting.row_desti) & (setting.r_col -1 == setting.col_desti)):
-       print "left forward stop"
-       com.brake()
-       com.left()
-       com.forward()
-       com.brake()
-       
-if(setting.pos == 270):
-    if((setting.r_row + 1 == setting.row_desti) & (setting.r_col == setting.col_desti)):
-        print "left forward stop"
-        com.brake()
-        com.left()
-        com.forward()
-        com.brake()
-       
-    elif((setting.r_row == setting.row_desti) & (setting.r_col - 1 == setting.col_desti)):
-        print "forward stop"
-        com.forward()
-        com.brake()
-        
-       
-    elif((setting.r_row - 1 == setting.row_desti) & (setting.r_col == setting.col_desti)):
-         print "right forwawrd stop"
-         com.brake()
-         com.right()
-         com.forward()
-         com.brake()
-       
 
+handlers = [(r"/websocket", WebSocket),
+		(r'/static/(.*)',tornado.web.StaticFileHandler,
+		{'path': os.path.normpath(os.path.dirname(__file__))})]
+application = tornado.web.Application(handlers)
+application.listen(8000)
+tornado.ioloop.IOLoop.instance().start()
 
