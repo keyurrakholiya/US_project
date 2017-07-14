@@ -5,6 +5,12 @@ import time
 import serial
 ser = serial.Serial('/dev/ttyACM0',9600)
 time.sleep(5)
+ser.write("6")
+while(1):
+        y=ser.read()
+        if(y=="6"):
+                print "connected"
+                break
 print "connected"
 ##forward
 def forward():
@@ -12,8 +18,8 @@ def forward():
 	while (1):
 		y = ser.read()
 		if (y == '1'):
-                        print "forward done"
-                        break	
+						print "forward done"
+						break	
 
 ##left
 def left():
@@ -21,8 +27,8 @@ def left():
 	while(1):
 		y = ser.read()
 		if (y == '2'):
-                        print "left done"
-                        break
+						print "left done1"
+						break
 
 #right
 def right():
@@ -31,8 +37,8 @@ def right():
 	while(1):
 		y =ser.read()
 		if( y == '3'):
-                        print "right done"
-                        break
+						print "right done1"
+						break
 
 ##brake
 def brake():
@@ -44,5 +50,7 @@ def brake():
 def start():
 	ser.write("5")
 	
-	
+
+
+
 ## we will add code for back later
